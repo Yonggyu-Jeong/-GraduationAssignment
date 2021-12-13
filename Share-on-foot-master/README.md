@@ -9,18 +9,6 @@
 위축된 기부문화를 엮어 소비자에게는 할인된 지역상점 이용을, 상점에는 손님을 가게를  
 찾아가는 걸음과 소비로 지역사회에 기부를 할 수 있는 플랫폼 
   
-
-
-### 최철환 - 프론트앤드, 고객 추천 루트 알고리즘
-### 박재연 - 백앤드, GPS기반 걸음포인트 제공 알고리즘
-### 구현진 - UI/UX 디자인
-## Representative email : piffinable.official@gmail.com
-
-## 홍보영상 : [Youtube](https://youtu.be/B8aklZ7BjXo)
-
-## 일정관리 : [Notion](https://www.notion.so/puffinable/b92735dec5584b2d91ed8ac6c4737648)
-
-# 개발환경 (Development environment)
 환경|버전
 ---|---|
 Eclipse IDE for EE Developers |20-03|
