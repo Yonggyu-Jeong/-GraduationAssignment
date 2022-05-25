@@ -48,7 +48,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
-
+import com.example.shareonfoot.util.Utils;
 
 import com.example.shareonfoot.R;
 import com.example.shareonfoot.home.activity_home;
@@ -57,9 +57,11 @@ import com.example.shareonfoot.util.WorkTask;
 import com.github.clans.fab.FloatingActionMenu;
 import com.github.clans.fab.FloatingActionButton;
 import com.google.gson.JsonObject;
+import com.google.gson.internal.LinkedTreeMap;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.geometry.Tm128;
 import com.naver.maps.geometry.Utmk;
+import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
@@ -160,6 +162,7 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
     private static final int UPDATE_INTERVAL_MS = 300000;  // 1초
     private static final int FASTEST_UPDATE_INTERVAL_MS = 300000; // 0.5초
     private Marker currentMarker = null;
+    private HashMap<String, Marker> Markermap = new HashMap<String, Marker>();
 
 
     private static class InfoWindowAdapter extends InfoWindow.ViewAdapter {
@@ -402,9 +405,16 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
         InfoWindow infoWindow = new InfoWindow();
 
+        CameraUpdate cameraUpdate = CameraUpdate.scrollTo(new LatLng(lat, lng));
+        naverMap.moveCamera(cameraUpdate);
+        getTestLocate(naverMap, infoWindow, lat.toString(), lng.toString());
+
         fabAdd.setOnClickListener(view -> {
-            getTestLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
-            Toast.makeText(getContext(), "fabMake", Toast.LENGTH_SHORT).show();
+            try {
+                getLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
+            } catch (Exception e) {
+                Toast.makeText(getContext(), "거리가 너무 짧습니다", Toast.LENGTH_SHORT);
+            }
             fam.close(true);
         });
 
@@ -412,12 +422,14 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
         fabMake.setOnClickListener(view -> {
             if(editText.getText() != null) {
                 getLocateNameforStart(editText.getText().toString(), naverMap, infoWindow);
-                Toast.makeText(getContext(), "fabAdd", Toast.LENGTH_SHORT).show();
                 checkStart = true;
                 if(checkStart && checkGoal) {
                     setCircle(naverMap, start_lng, goal_lng, start_lat, goal_lat);
-                    //getLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
-                }
+                    try {
+                        getLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
+                    } catch (Exception e) {
+                        Toast.makeText(getContext(), "거리가 너무 짧습니다", Toast.LENGTH_SHORT);
+                    }                }
                 fam.close(true);
             }
         });
@@ -426,12 +438,15 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
         fabRecommend.setOnClickListener(view -> {
             if(editText.getText() != null) {
                 getLocateNameforGoal(editText.getText().toString(), naverMap, infoWindow);
-                Toast.makeText(getContext(), "fabAdd", Toast.LENGTH_SHORT).show();
                 checkGoal = true;
                 if(checkStart && checkGoal) {
                     if(checkStart && checkGoal) {
                         setCircle(naverMap, start_lng, goal_lng, start_lat, goal_lat);
-                        //getLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
+                        try {
+                            //getLocate(naverMap, infoWindow, user_id, user_password, start_lng.toString(), start_lat.toString(), goal_lng.toString(), goal_lat.toString());
+                        } catch (Exception e) {
+                            Toast.makeText(getContext(), "거리가 너무 짧습니다", Toast.LENGTH_SHORT);
+                        }
                     }
                 }
                 fam.close(true);
@@ -576,6 +591,11 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
             start_lat = tm128.toLatLng().latitude;
             start_lng = tm128.toLatLng().longitude;
 
+
+            if(checkStart == true) {
+                Marker tempMarker = (Marker) Markermap.get("markerStart");
+                tempMarker.setMap(null);
+            }
             markerStart.setTag("출발지");
             markerStart.setIcon(MarkerIcons.RED);
             markerStart.setCaptionTextSize(14);
@@ -585,9 +605,13 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
             markerStart.setSubCaptionColor(Color.GRAY);
             markerStart.setSubCaptionText(getString(R.string.marker_sub_caption_start));
             markerStart.setSubCaptionMinZoom(13);
+            Markermap.put("markerStart", markerStart);
             markerStart.setMap(naverMap);
 
-            Toast.makeText(getContext(), tm128.toLatLng().toString(), Toast.LENGTH_LONG).show();
+            editText.setText("");
+            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(new LatLng(start_lat, start_lng));
+            naverMap.moveCamera(cameraUpdate);
+
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -602,29 +626,38 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
         try {
             hashMap = mapTask.execute(name).get();
 
-            Marker markerStart = new Marker();
+            Marker markerGoal = new Marker();
             Tm128 tm128 = new Tm128((Double)hashMap.get("mapx"), (Double)hashMap.get("mapy"));
-            markerStart.setPosition(tm128.toLatLng());
+            markerGoal.setPosition(tm128.toLatLng());
 
-            markerStart.setOnClickListener(overlay -> {
-                infoWindow.open(markerStart);
+            markerGoal.setOnClickListener(overlay -> {
+                infoWindow.open(markerGoal);
                 return true;
             });
             goal_lat = tm128.toLatLng().latitude;
             goal_lng = tm128.toLatLng().longitude;
 
-            markerStart.setTag("도착지");
-            markerStart.setIcon(MarkerIcons.BLUE);
-            markerStart.setCaptionTextSize(14);
-            markerStart.setCaptionText(getString(R.string.marker_sub_caption_goal));
-            markerStart.setCaptionMinZoom(12);
-            markerStart.setSubCaptionTextSize(10);
-            markerStart.setSubCaptionColor(Color.GRAY);
-            markerStart.setSubCaptionText(getString(R.string.marker_sub_caption_goal));
-            markerStart.setSubCaptionMinZoom(13);
-            markerStart.setMap(naverMap);
+            if(checkGoal == true) {
+                Marker tempMarker = (Marker) Markermap.get("markerGoal");
+                tempMarker.setMap(null);
+            }
 
-            Toast.makeText(getContext(), tm128.toLatLng().toString(), Toast.LENGTH_LONG).show();
+            markerGoal.setTag("도착지");
+            markerGoal.setIcon(MarkerIcons.LIGHTBLUE);
+            markerGoal.setCaptionTextSize(14);
+            markerGoal.setCaptionText(getString(R.string.marker_sub_caption_goal));
+            markerGoal.setCaptionMinZoom(12);
+            markerGoal.setSubCaptionTextSize(10);
+            markerGoal.setSubCaptionColor(Color.GRAY);
+            markerGoal.setSubCaptionText(getString(R.string.marker_sub_caption_goal));
+            markerGoal.setSubCaptionMinZoom(13);
+            Markermap.put("markerGoal", markerGoal);
+            markerGoal.setMap(naverMap);
+
+            editText.setText("");
+            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(new LatLng(goal_lat, goal_lng));
+            naverMap.moveCamera(cameraUpdate);
+
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -633,11 +666,13 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
     }
 
     public void getTestLocate(NaverMap naverMap, InfoWindow infoWindow, String... obj) {
-        WorkTask.GetTestLocateTask mapTask = new WorkTask.GetTestLocateTask(requireContext());
-        String result = "";
+        WorkTask.GetLocateForReadyTask mapTask = new WorkTask.GetLocateForReadyTask(requireContext());
+        HashMap<String, Object> resultMap = new HashMap<String, Object>();
         try {
-            result = mapTask.execute(obj).get();
-            Toast.makeText(getContext(), result.toString(), Toast.LENGTH_LONG).show();
+            HashMap<String, Object> executetMap = mapTask.execute(obj).get();
+            if(executetMap.get("check").toString().equals("ok")) {
+                setCaptionToMap(naverMap, infoWindow, executetMap);
+            }
 
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -648,10 +683,23 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
 
     public void getLocate(NaverMap naverMap, InfoWindow infoWindow, String... obj) {
         WorkTask.GetLocateTask mapTask = new WorkTask.GetLocateTask(requireContext());
-        String result = "";
+        HashMap<String, Object> resultMap = null;
         try {
-            result = mapTask.execute(obj).get();
-            Toast.makeText(getContext(), result.toString(), Toast.LENGTH_LONG).show();
+            resultMap = mapTask.execute(obj).get();
+            if(resultMap.get("check").toString().equals("ok")) {
+                for(int i=0; i<3; i++) {
+                    ArrayList<Object> dataList = null;
+                    int dataSize = 0;
+                    dataList = (ArrayList<Object>)resultMap.get("resultDataList"+i);
+                    dataSize = Integer.parseInt(String.valueOf(Math.round((Double) resultMap.get("DataSize"+i))));
+                    Log.i("dataList"+i, dataList.toString());
+                    Log.i("dataSize"+i, String.valueOf(dataSize));
+                    setCaptionToMap(naverMap, infoWindow, dataList, dataSize);
+                }
+
+            } else {
+                Toast.makeText(getContext(), "추천 목적지의 수가 적습니다. 다른 장소를 입력해주세요.", Toast.LENGTH_SHORT).show();
+            }
 
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -728,6 +776,113 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
 
         return hashMap;
     }
+
+    public void setCaptionToMap(NaverMap naverMap, InfoWindow infoWindow, HashMap<String, Object> map) {
+        Utils utils = new Utils();
+
+        for(int i = 0; i<Integer.parseInt(String.valueOf(Math.round((Double) map.get("result-size")))); i++) {
+            LinkedTreeMap<String,Object> paramMap = (LinkedTreeMap<String, Object>) map.get("result_" + (i + 1));
+
+            Marker marker = new Marker();
+            LatLng xy = new LatLng((Double) paramMap.get("lat"), (Double) paramMap.get("lng"));
+            marker.setPosition(xy);
+
+            String category = "";
+            category = utils.getCategory(paramMap.get("category").toString())+"\n";
+            for(int j=1; j<5; j++) {
+                category = category+"#"+utils.getTagCategory(paramMap.get("tag"+j).toString());
+                if(j<4) {
+                    category += "\n";
+                }
+            }
+
+            infoWindow.setAnchor(new PointF(0, 1));
+            infoWindow.setOffsetX(getResources().getDimensionPixelSize(R.dimen.custom_info_window_offset_x));
+            infoWindow.setOffsetY(getResources().getDimensionPixelSize(R.dimen.custom_info_window_offset_y));
+            infoWindow.setAdapter(new InfoWindowAdapter(this));
+            marker.setOnClickListener(overlay -> {
+                infoWindow.open(marker);
+                return true;
+            });
+
+            marker.setTag(category);
+            marker.setIcon(MarkerIcons.PINK);
+            marker.setCaptionTextSize(14);
+            marker.setCaptionText(paramMap.get("name").toString());
+            marker.setCaptionMinZoom(12);
+            marker.setSubCaptionTextSize(10);
+            marker.setSubCaptionColor(Color.GRAY);
+            marker.setSubCaptionText("추천 장소");
+            marker.setSubCaptionMinZoom(13);
+            Markermap.put("marker-"+i, marker);
+            marker.setMap(naverMap);
+            infoWindow.open(marker);
+
+            naverMap.setOnMapClickListener((point, coord) -> {
+                infoWindow.setPosition(coord);
+                infoWindow.open(naverMap);
+            });
+        }
+    }
+
+    public void setCaptionToMap(NaverMap naverMap, InfoWindow infoWindow, ArrayList<Object> dataList, int dataSize) {
+        Utils utils = new Utils();
+        for(int i=0; i<dataSize; i++) {
+            LinkedTreeMap<String,Object> paramMap = (LinkedTreeMap<String, Object>) dataList.get(i);
+            Log.i("paramMap"+i, paramMap.toString());
+
+            Marker marker = new Marker();
+            LatLng xy = new LatLng((Double) paramMap.get("lat"), (Double) paramMap.get("lng"));
+            marker.setPosition(xy);
+
+            String category = "";
+            category = utils.getCategory(paramMap.get("category").toString())+"\n";
+            for(int j=1; j<5; j++) {
+                category = category+"#"+utils.getTagCategory(paramMap.get("tag"+j).toString());
+                if(j<4) {
+                    category += "\n";
+                }
+            }
+
+            infoWindow.setAnchor(new PointF(0, 1));
+            infoWindow.setOffsetX(getResources().getDimensionPixelSize(R.dimen.custom_info_window_offset_x));
+            infoWindow.setOffsetY(getResources().getDimensionPixelSize(R.dimen.custom_info_window_offset_y));
+            infoWindow.setAdapter(new InfoWindowAdapter(this));
+            marker.setOnClickListener(overlay -> {
+                infoWindow.open(marker);
+                return true;
+            });
+
+            marker.setTag(category);
+
+            if(i==0) {
+                marker.setIcon(MarkerIcons.YELLOW);
+            } else if(i==1) {
+                marker.setIcon(MarkerIcons.GREEN);
+            } else {
+                marker.setIcon(MarkerIcons.BLUE);
+            }
+
+            marker.setCaptionTextSize(14);
+            marker.setCaptionText(paramMap.get("name").toString());
+            marker.setCaptionMinZoom(12);
+            marker.setSubCaptionTextSize(10);
+            marker.setSubCaptionColor(Color.GRAY);
+            marker.setSubCaptionText("추천 장소");
+            marker.setSubCaptionMinZoom(13);
+            Markermap.put("marker-"+i, marker);
+            marker.setMap(naverMap);
+            infoWindow.open(marker);
+
+            naverMap.setOnMapClickListener((point, coord) -> {
+                infoWindow.setPosition(coord);
+                infoWindow.open(naverMap);
+            });
+
+        }
+    }
+}
+
 
     /*
         class NearestTask extends AsyncTask<String, String, String> {
@@ -873,4 +1028,3 @@ public class fragment_codi extends Fragment implements OnBackPressedListener, On
                         }
                         }
      */
-}

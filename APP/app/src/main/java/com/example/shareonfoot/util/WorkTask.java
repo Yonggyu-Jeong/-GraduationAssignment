@@ -3,8 +3,10 @@ package com.example.shareonfoot.util;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.example.shareonfoot.HTTP.Service.CategoryService;
 import com.example.shareonfoot.HTTP.Service.MapService;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -68,7 +70,7 @@ public class WorkTask {
     }
 
 
-       public static class GetLocateTask extends AsyncTask<String, Void, String> {
+       public static class GetLocateTask extends AsyncTask<String, Void,  HashMap<String, Object>> {
 
         public Context context;
 
@@ -82,8 +84,9 @@ public class WorkTask {
         }
 
         @Override
-        protected String doInBackground(String... obj) {
+        protected  HashMap<String, Object> doInBackground(String... obj) {
             HashMap map = new HashMap();
+            HashMap<String, Object> resultMap = new HashMap<String, Object>();
             HashMap mapUser = new HashMap();
             HashMap mapStart = new HashMap();
             HashMap mapGoal = new HashMap();
@@ -102,18 +105,21 @@ public class WorkTask {
             Call<JsonObject> objectCall = MapService.getRetrofit(context).getLocate(map);
             try {
                 Object result = objectCall.execute().body();
-                Gson gson = new Gson();
-                JsonObject json = gson.toJsonTree(result).getAsJsonObject();
-                return json.toString();
+                Log.e("SELECT 목록 = ", result.toString());
+                //JsonObject json = gson.toJsonTree(result).getAsJsonObject();
+                resultMap = new Gson().fromJson(result.toString(), new TypeToken<HashMap<String, Object>>() {}.getType());
+                resultMap.put("check", "ok");
+                return resultMap;
 
             } catch (IOException e) {
                 e.printStackTrace();
-                return "fail";
+                resultMap.put("check", "fail");
+                return resultMap;
             }
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute( HashMap<String, Object> s) {
             super.onPostExecute(s);
             if (s.equals("fail")) {
                 Toast.makeText(context, "네트워크 연결상태를 확인해주세요.", Toast.LENGTH_SHORT).show();
@@ -167,6 +173,93 @@ public class WorkTask {
 
         @Override
         protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            if (s.equals("fail")) {
+                Toast.makeText(context, "네트워크 연결상태를 확인해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    public static class GetCategoryListTask extends AsyncTask<String, Void, String> {
+
+        public Context context;
+
+        public GetCategoryListTask(Context getContext) {
+            context = getContext;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... obj) {
+            HashMap map = new HashMap();
+            map.put("category", obj);
+
+            Call<JsonObject> objectCall = CategoryService.getRetrofit(context).getCategory(map);
+            try {
+                Object result = objectCall.execute().body();
+                Gson gson = new Gson();
+                JsonObject json = gson.toJsonTree(result).getAsJsonObject();
+                return json.toString();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "fail";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            if (s.equals("fail")) {
+                Toast.makeText(context, "네트워크 연결상태를 확인해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public static class GetLocateForReadyTask extends AsyncTask<String, Void, HashMap<String, Object>> {
+
+        public Context context;
+
+        public GetLocateForReadyTask(Context getContext) {
+            context = getContext;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected HashMap<String, Object> doInBackground(String... obj) {
+            HashMap<String, Object> map = new HashMap<String, Object>();
+
+            map.put("lat", obj[0]);
+            map.put("lng", obj[1]);
+
+            Call<JsonObject> objectCall = MapService.getRetrofit(context).getLocateForReady(map);
+            try {
+                Object result = objectCall.execute().body();
+                Gson gson = new Gson();
+
+                map = new Gson().fromJson(result.toString(), new TypeToken<HashMap<String, Object>>() {}.getType());
+                map.put("check", "ok");
+
+                return map;
+
+            } catch (IOException e) {
+                map.put("check", "fail");
+                e.printStackTrace();
+                return map;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(HashMap<String, Object>  s) {
             super.onPostExecute(s);
             if (s.equals("fail")) {
                 Toast.makeText(context, "네트워크 연결상태를 확인해주세요.", Toast.LENGTH_SHORT).show();

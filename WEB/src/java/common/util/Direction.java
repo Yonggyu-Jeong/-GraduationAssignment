@@ -1,6 +1,7 @@
 package common.util;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -10,7 +11,6 @@ import common.collection.ABoxList;
 public class Direction {
 	public static ABoxList<ABox> getDirection(ABox aBox) {
 		ABoxList<ABox> resultBoxList = new ABoxList<ABox>();
-		ABox directionBox = new ABox();
 		DecimalFormat df = new DecimalFormat("0.0000000");
 		try {
 			ABox startBox = new ABox();
@@ -36,6 +36,7 @@ public class Direction {
 			distance = distance / 3;
 
 			for (int i = 0; i < 3; i++) {
+				ABox directionBox = new ABox();
 				if (i != 0) {
 					lng_standard = lng_standard2;
 					lat_standard = lat_standard2;
@@ -55,13 +56,15 @@ public class Direction {
 				double lat_new3 = lat_new - distance / 2;
 
 				directionBox.set("minLng",
-						df.format(Collections.min(List.of(lng_new2, lng_new3, lng_standard, lng_standard2))));
+						df.format(Collections.min(Arrays.asList(lng_new2, lng_new3, lng_standard, lng_standard2))));
 				directionBox.set("maxLng",
-						df.format(Collections.max(List.of(lng_new2, lng_new3, lng_standard, lng_standard2))));
+						df.format(Collections.max(Arrays.asList(lng_new2, lng_new3, lng_standard, lng_standard2))));
 				directionBox.set("minLat",
-						df.format(Collections.min(List.of(lat_new2, lat_new3, lat_standard, lat_standard2))));
+						df.format(Collections.min(Arrays.asList(lat_new2, lat_new3, lat_standard, lat_standard2))));
 				directionBox.set("maxLat",
-						df.format(Collections.max(List.of(lat_new2, lat_new3, lat_standard, lat_standard2))));
+						df.format(Collections.max(Arrays.asList(lat_new2, lat_new3, lat_standard, lat_standard2))));
+//				System.out.println(directionBox.getString("minLng")+"/"+directionBox.getString("maxLng")+"/"+directionBox.getString("minLat")+"/"+directionBox.getString("maxLat"));
+				
 				resultBoxList.set(directionBox);
 			}
 

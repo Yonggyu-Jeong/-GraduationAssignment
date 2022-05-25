@@ -35,17 +35,6 @@ public class UserServiceImpl extends SuperService implements UserService {
 		return result;
 	}
 
-	public String test2() {
-		String result = "";
-		try {
-			// KMeans kmeans = new KMeans(dataset[datasetIndex], clusterNumber, 100, 4);
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		return result;
-	}
-
 	@Override
 	public ABox searchUserList(ABox aBox) throws DataAccessException {
 		ABox result = new ABox();
@@ -84,8 +73,7 @@ public class UserServiceImpl extends SuperService implements UserService {
 	public ABox insertLocation(ABoxList<ABox> aBoxList) throws DataAccessException {
 		ABox resultABox = new ABox();
 		int size = aBoxList.size();
-		int cnt = commonDao.select("mybatis.shadow.user.user_mapper.selectLocationLabelCountSQL", resultABox)
-				.getInt("cnt") + 1;
+		int cnt = commonDao.select("mybatis.shadow.user.user_mapper.selectLocationLabelCountSQL", resultABox).getInt("cnt") + 1;
 		String temp = "";
 		Random random = new Random();
 		ABox aBox = new ABox();
@@ -202,26 +190,36 @@ public class UserServiceImpl extends SuperService implements UserService {
 		ABox resultABox = new ABox();
 
 		// KMeans kmeans = null;
-		Weather weather = new Weather();
+		//Weather weather = new Weather();
 		try {
 			ABox userABox = new ABox();
 			ABox userBox = new ABox();
+
 			userBox.set("id", "hello");
 			userBox.set("password", "1");
 			Random random = new Random();
 			ABox locationABox = new ABox();
+			resultABox.set("find-error", "3");
+
 			ABoxList<ABox> locateList = new ABoxList<ABox>();
 			ABoxList<ABox> locateDataList = new ABoxList<ABox>();
+			resultABox.set("find-error", "4");
 			ABoxList<ABox> directList = Direction.getDirection(aBox);
-			ABoxList<ABox> returnDataList = new ABoxList<ABox>();
-			ABox weatherBox = weather.getWeather();
+			resultABox.set("find-error", "5");
+			ABoxList<ABox> resultDataList = new ABoxList<ABox>();
+			resultABox.set("find-error", "6");
+
+			//ABox weatherBox = weather.getWeather();
 			userABox = commonDao.select("mybatis.shadow.user.user_mapper.selectUserListSQL", userBox);
+			resultABox.set("find-error", "7");
 
 			for (int i = 0; i < directList.size(); i++) {
 				locateList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateList",
 						directList.get(i));
 				locationABox.set("locateList", locateList);
+				resultABox.set("find-error", "8");
 
+			/*
 				for (int j = 0; j < locateList.size(); j++) {
 					if ((weatherBox.getString("wf").equals("흐리고 비") || weatherBox.getString("wf").equals("구름많고 비")
 							|| weatherBox.getInt("tmn") <= 12 || weatherBox.getInt("tmx") >= 27)
@@ -230,23 +228,27 @@ public class UserServiceImpl extends SuperService implements UserService {
 					}
 				}
 
+			 */
 				ABoxList<ABox> locateIdList = new ABoxList<ABox>();
 				for (int j = 0; j < locateList.size(); j++) {
 					locateIdList.add(new ABox().set("location", locateList.get(j).getInt("locate_id")));
 				}
-				locateDataList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateDataSQL",
-						new ABox().set("locateIdList", locateIdList));
+				resultABox.set("find-error", "9");
+				locateDataList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateDataSQL", new ABox().set("locateIdList", locateIdList));
 
-				Double[][] dataFrame = mDataFrame.getDoubleFrame(locateDataList, userABox);
+				//Double[][] dataFrame = mDataFrame.getDoubleFrame(locateDataList, userABox);
+				resultABox.set("find-error", "10");
 
-				returnDataList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateList2",
-						new ABox().set("locateIdList", locateIdList));
-				for (int j = 0; j < returnDataList.size(); j++) {
-					returnDataList.get(j).set("rate", random.nextInt(5) + 1);
+				resultDataList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateList2", new ABox().set("locateIdList", locateIdList));
+				for (int j = 0; j < resultDataList.size(); j++) {
+					resultDataList.get(j).set("rate", random.nextInt(5) + 1);
 				}
-				resultABox.set("returnDataList" + i, returnDataList);
+				resultABox.set("find-error", "11");
+				resultABox.set("DataSize" + i, resultDataList.size());
+				resultABox.set("resultDataList" + i, resultDataList);
 			}
 			resultABox.set("check", "ok");
+			return resultABox;
 
 		} catch (Exception ex) {
 			resultABox.set("check", "fail");
@@ -272,6 +274,55 @@ public class UserServiceImpl extends SuperService implements UserService {
 				}
 				resultABox.set("locationList"+i, locationList);
 			}
+			resultABox.set("check", "ok");
+			
+		} catch (Exception ex) {
+			resultABox.set("check", "fail");
+			ex.printStackTrace();
+		} 
+		return resultABox;
+	}
+
+	@Override
+	public ABox getCategoryList(ABox jsonBox) {
+		ABox resultABox = new ABox();
+		try {
+			ABoxList<ABox> categoryList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectCategoryListSQL", jsonBox);
+			resultABox.set("check", "ok");
+			resultABox.set("list", categoryList);
+			
+		} catch (Exception ex) {
+			resultABox.set("check", "fail");
+			ex.printStackTrace();
+		} 
+		return resultABox;
+	}
+	
+
+	@Override
+	public ABox getLocation(ABox aBox) {
+		ABox resultABox = new ABox();
+		try {			
+			ABoxList<ABox> locationList = new ABoxList<ABox>();
+			for(int i=0; i<3; i++) {
+				ABox paramBox = new ABox();
+				paramBox.set("maxLng", aBox.getDouble("lng")+(0.01*2));
+				paramBox.set("minLng", aBox.getDouble("lng")-(0.01*2));
+				paramBox.set("maxLat", aBox.getDouble("lat")+(0.01*2));
+				paramBox.set("minLat", aBox.getDouble("lat")-(0.01*2));
+
+				locationList = commonDao.selectList("mybatis.shadow.user.user_mapper.selectLocateList", paramBox);
+				if(!locationList.isEmpty()) {
+					if(locationList.size() >= 3) {
+						break;
+					}
+				}
+				
+			}
+			for(int i=0; i<locationList.size(); i++) {
+				resultABox.set("result_"+(i+1), locationList.get(i));
+			}
+			resultABox.set("result-size", locationList.size());
 			resultABox.set("check", "ok");
 			
 		} catch (Exception ex) {
