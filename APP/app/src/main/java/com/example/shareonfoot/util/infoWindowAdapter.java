@@ -18,11 +18,21 @@ import com.naver.maps.map.overlay.InfoWindow;
 public class infoWindowAdapter extends InfoWindow.DefaultViewAdapter {
     private final Context mContext;
     private final ViewGroup mParent;
+    private String option = "";
     public LinkedTreeMap<String, Object> mParamMap;
 
     public infoWindowAdapter(@NonNull Context context, ViewGroup parent, LinkedTreeMap<String, Object> paramMap)
     {
         super(context);
+        mContext = context;
+        mParent = parent;
+        mParamMap = paramMap;
+    }
+
+    public infoWindowAdapter(@NonNull Context context, ViewGroup parent, LinkedTreeMap<String, Object> paramMap, String option)
+    {
+        super(context);
+        option = option;
         mContext = context;
         mParent = parent;
         mParamMap = paramMap;
@@ -48,7 +58,7 @@ public class infoWindowAdapter extends InfoWindow.DefaultViewAdapter {
         String type = utils.getCategory(mParamMap.get("category").toString());
         String tags = "";
         for(int j=1; j<5; j++) {
-            tags = "#"+utils.getTagCategory(mParamMap.get("tag"+j).toString()+"\n");
+            tags += "#"+utils.getTagCategory(mParamMap.get("tag"+j).toString())+"\n";
         }
         title.setText(mParamMap.get("name").toString());
         category.setText(type);

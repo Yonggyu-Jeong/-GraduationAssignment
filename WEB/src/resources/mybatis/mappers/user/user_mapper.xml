@@ -131,7 +131,7 @@
 		parameterType="common.collection.ABox">
 	<![CDATA[
 		SELECT 
-			a.locate_id, b.label_seq, a.name, a.category, a.road, a.lng, a.lat, b.tag1, b.tag2, b.tag3, b.tag4, b.door_tag	
+			a.locate_id, b.label_seq, a.name, a.category, a.road, a.lng, a.lat, b.tag1, b.tag2, b.tag3, b.tag4, b.door_tag, b.rate
 		FROM 
 			locate a, locate_label b
 		WHERE
@@ -156,9 +156,36 @@
 		WHERE 
 			category = #{category}
 		ORDER BY 
-			locate_id LIMIT 0,10;
-
+			locate_id 
+		LIMIT 
+			0,10;
 	]]>
 	</select>
+	
+	<select id="selectCategoryUserListSQL"
+		resultType="common.collection.ABox"
+		parameterType="common.collection.ABox">
+	<![CDATA[
+		SELECT 
+			a.locate_id, a.name, a.category, a.city, a.area, a.road, a.info, a.lng, a.lat, b.star, b.choose
+		FROM 
+			locate a, member_path b
+		WHERE 
+			b.member_id = #{memberId} AND
+			a.locate_id = b.locate_id
+		ORDER BY 
+			locate_id 
+		LIMIT 
+			0,10;
+	]]>
+	</select>
+	
+	<update id="updateRate" parameterType="common.collection.ABox">
+	<![CDATA[
+		UPDATE locate_label
+		SET rate = 1.5+ROUND(RAND()*3.5,1)
+		WHERE label_seq = #{idx};
+	]]>
+	</update>
 
 </mapper>

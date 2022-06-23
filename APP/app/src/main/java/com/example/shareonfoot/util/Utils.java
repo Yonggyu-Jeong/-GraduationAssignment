@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.shareonfoot.R;
+import com.google.gson.internal.LinkedTreeMap;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class Utils {
 
@@ -178,22 +180,31 @@ public class Utils {
 
     public String getTagCategory(String s) {
         if (s.substring(2, 3).equals("0")) {
+            Log.e("===1", s.substring(2, 3));
             switch (s.substring(3)) {
                 case "0":
+                    Log.e("=====1", s.substring(3));
                     return "귀여운";
                 case "1":
+                    Log.e("=====1", s.substring(3));
                     return "사랑스러운";
                 case "2":
+                    Log.e("=====1", s.substring(3));
                     return "달콤한";
                 case "3":
+                    Log.e("=====1", s.substring(3));
                     return "아기자기한";
                 case "4":
+                    Log.e("=====1", s.substring(3));
                     return "예쁜";
                 case "5":
+                    Log.e("=====1", s.substring(3));
                     return "즐거운";
                 case "6":
+                    Log.e("=====1", s.substring(3));
                     return "쾌활한";
                 case "7":
+                    Log.e("=====1", s.substring(3));
                     return "신선한";
             }
         } else if (s.substring(2, 3).equals("1")) {
@@ -346,6 +357,42 @@ public class Utils {
         return "fail";
     }
 
+
+    public ArrayList<Object> setRecommendPath (HashMap map, ArrayList<Object>... lists) {
+        ArrayList<Object> resultList = new ArrayList<>();
+        Random random = new Random();
+        int list0_size = lists[0].size();
+        int list1_size = lists[1].size();
+        int list2_size = lists[2].size();
+
+        for(int i=0; i<3; i++) {
+
+            HashMap<String, Object> responseMap = new HashMap();
+            String waypoint = "";
+            responseMap.put("start", map.get("start_lng")+","+map.get("start_lat"));
+            responseMap.put("goal", map.get("goal_lng")+","+map.get("goal_lat"));
+
+            if(list0_size > 0) {
+                int randomCount = random.nextInt(list0_size);
+                LinkedTreeMap<String,Object> wayPoint = (LinkedTreeMap<String,Object>) lists[0].get(randomCount);
+                waypoint += wayPoint.get("lng")+","+wayPoint.get("lat")+":";
+
+            }
+            if(list1_size > 0) {
+                int randomCount = random.nextInt(list1_size);
+                LinkedTreeMap<String,Object> wayPoint = (LinkedTreeMap<String,Object>) lists[1].get(randomCount);
+                waypoint += wayPoint.get("lng")+","+wayPoint.get("lat")+":";
+            }
+            if(list2_size > 0) {
+                int randomCount = random.nextInt(list2_size);
+                LinkedTreeMap<String,Object> wayPoint = (LinkedTreeMap<String,Object>) lists[2].get(randomCount);
+                waypoint += wayPoint.get("lng")+","+wayPoint.get("lat")+":";
+            }
+            responseMap.put("waypoints", waypoint.substring(0, waypoint.length()-1));
+            resultList.add(responseMap);
+        }
+        return resultList;
+    }
 
 
     public static CropImage.ActivityBuilder CropImageSetting(){
